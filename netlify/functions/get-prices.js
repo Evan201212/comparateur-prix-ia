@@ -55,7 +55,8 @@ export default async (req, context) => {
         }
 
         const genAI = new GoogleGenerativeAI(geminiApiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // User requested Gemini 2.5 Flash.
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         // 3. Prompt for Price Search
         const prompt = `You are "Food Scan", a real-time price comparator for the French market.
