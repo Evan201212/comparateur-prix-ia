@@ -99,10 +99,17 @@ function renderResults(results) {
         const card = document.createElement('div');
         card.className = 'price-card';
         card.innerHTML = `
-            <div class="store-name">${escapeHtml(item.store_name)}</div>
-            <div class="product-name">${escapeHtml(item.product_name || item.unit || '')}</div>
-            <div class="price-tag">
-                ${item.price.toFixed(2)} ${item.currency}
+            <div class="result-details">
+                <div class="store-name">${escapeHtml(item.store_name)}</div>
+                <div class="product-name">${escapeHtml(item.product_name)}</div>
+                <div class="product-unit">${escapeHtml(item.unit)}</div>
+            </div>
+            <div class="result-actions">
+                <div class="result-price">${item.price.toFixed(2)} ${item.currency}</div>
+                ${item.product_url ?
+                `<a href="${item.product_url}" target="_blank" class="product-link-btn">Voir le produit 🔗</a>` :
+                ''
+            }
             </div>
         `;
         resultsGrid.appendChild(card);

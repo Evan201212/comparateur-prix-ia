@@ -69,6 +69,7 @@ export default async (req, context) => {
     
     2. Ideally, choose a standard product (e.g., "Eco-brand" if generic request, or specific brand if named).
     3. Return ONLY a valid JSON array of objects. No markdown formatting.
+    4. For each product, try to generate a valid specific product URL or a search URL on the retailer's site.
     
     JSON Format:
     [
@@ -77,7 +78,8 @@ export default async (req, context) => {
         "price": 1.23,
         "currency": "€",
         "product_name": "Didactic Product Name (e.g. Lait Lactel 1L)",
-        "unit": "1L"
+        "unit": "1L",
+        "product_url": "https://www.store.com/product/..."
       }
     ]
     
@@ -127,6 +129,7 @@ export default async (req, context) => {
                     currency: p.currency,
                     product_name: p.product_name,
                     unit: p.unit,
+                    product_url: p.product_url || null,
                     created_at: new Date().toISOString()
                 }));
                 await supabase.from('price_results').insert(resultRows);

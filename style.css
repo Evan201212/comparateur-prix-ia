@@ -401,7 +401,43 @@ footer a {
     margin-bottom: 0.5rem;
 }
 
+
 .error-hint {
     font-size: 0.8rem;
     color: #94a3b8;
+}
+
+/* Product Link Button */
+.result-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.result-price {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: right;
+}
+
+.product-link-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    /* Green gradient for action */
+    color: white;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: transform 0.2s, filter 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.product-link-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
 }
