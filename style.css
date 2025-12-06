@@ -379,3 +379,29 @@ footer a {
         padding: 1.5rem;
     }
 }
+
+/* Error Styling */
+.error-container {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+}
+
+.error-title {
+    font-weight: 700;
+    color: #fca5a5;
+    margin-bottom: 0.5rem;
+}
+
+.error-message {
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.error-hint {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}

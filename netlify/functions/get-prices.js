@@ -85,22 +85,35 @@ export default async (req, context) => {
     Sort the results from cheapest to most expensive.`;
 
         const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-
         // Clean up markdown code blocks if present
-        const cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+        const responseText = result.response.text();
+        console.log("Raw Gemini Response:", responseText); // Debug log
+
+        let cleanJson = responseText;
+        // Attempt to extract JSON array using regex
+        const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+            cleanJson = jsonMatch[0];
+        } else {
+            // Fallback cleanup
+            cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+        }
 
         let prices = [];
         try {
             prices = JSON.parse(cleanJson);
         } catch (e) {
-            console.error("Failed to parse Gemini response", responseText);
+            console.error("Failed to parse Gemini response", cleanJson);
             return {
                 statusCode: 502,
                 headers,
-                body: JSON.stringify({ error: "Failed to process AI response" })
+                body: JSON.stringify({
+                    error: "Erreur d'analyse IA",
+                    details: "L'IA n'a pas renvoyé un format valide.",
+                    raw: responseText.substring(0, 100)
+                })
             };
-        }
+        };
 
         // 4. Log to Supabase
         if (supabase) {

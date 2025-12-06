@@ -18,7 +18,9 @@ This project allows users to search for food items and get real-time price estim
 - **Supabase Project**: `comparateur-prix-ia`
 
 ### 2. Environment Variables
-You must set these variables in Netlify > Site Settings > Environment Variables:
+**IMPORTANT**: You must set these variables for the app to work.
+- In Netlify: Site Settings > Environment Variables
+- Locally: Create a `.env` file (copy `.env.example`).
 
 - `GEMINI_API_KEY`: Your Google AI API Key.
 - `SUPABASE_URL`: Your Supabase URL.

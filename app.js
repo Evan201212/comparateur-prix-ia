@@ -50,7 +50,10 @@ async function handleSearch(e) {
             body: JSON.stringify({ query })
         });
 
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || errorData.details || 'Erreur inconnue');
+        }
 
         const data = await response.json();
 
@@ -64,7 +67,12 @@ async function handleSearch(e) {
 
     } catch (error) {
         console.error('Error:', error);
-        resultsGrid.innerHTML = `<p class="error">Une erreur est survenue lors de la recherche. Veuillez réessayer.</p>`;
+        resultsGrid.innerHTML = `
+            <div class="error-container">
+                <p class="error-title">Oups ! Une erreur est survenue.</p>
+                <p class="error-message">${error.message}</p>
+                <p class="error-hint">Vérifiez la configuration (Clé API) ou réessayez.</p>
+            </div>`;
         resultsSection.classList.remove('hidden');
     } finally {
         statusMessage.classList.add('hidden');
