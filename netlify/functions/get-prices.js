@@ -162,12 +162,15 @@ export default async (req, context) => {
 
                     // If we have a domain and the URL is not already a google search, rewrite it
                     // Or if product_url is missing, generate it.
+                    // IMPORTANT: Sanitize product name by removing quotes to avoid strict search failures on Google
+                    const cleanProductName = p.product_name.replace(/['"]/g, '');
+
                     if (domain && (!finalUrl || !finalUrl.includes('google.com'))) {
-                        const safeQuery = encodeURIComponent(`site:${domain} ${p.product_name}`);
+                        const safeQuery = encodeURIComponent(`site:${domain} ${cleanProductName}`);
                         finalUrl = `https://www.google.com/search?q=${safeQuery}`;
                     } else if (!finalUrl || !finalUrl.includes('google.com')) {
                         // Fallback for unknown stores
-                        const safeQuery = encodeURIComponent(`${p.store_name} ${p.product_name}`);
+                        const safeQuery = encodeURIComponent(`${p.store_name} ${cleanProductName}`);
                         finalUrl = `https://www.google.com/search?q=${safeQuery}`;
                     }
 
