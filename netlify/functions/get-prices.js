@@ -40,7 +40,8 @@ export default async (req, context) => {
         }
 
         // 2. Initialize Gemini
-        const geminiApiKey = process.env.GEMINI_API_KEY || "AIzaSyD4MTxBGHxHxae3T9ydUhClP1XY5nUEtIg";
+        // PRIORITY: Use hardcoded key for demo to avoid Netlify env var ssues.
+        const geminiApiKey = "AIzaSyD4MTxBGHxHxae3T9ydUhClP1XY5nUEtIg" || process.env.GEMINI_API_KEY;
         // WARNING: Hardcoded key for demo/fix.
 
         if (!geminiApiKey) {
