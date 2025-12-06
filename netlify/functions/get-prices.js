@@ -140,17 +140,55 @@ export default async (req, context) => {
 
             if (!historyError && historyData && historyData.length > 0) {
                 const searchId = historyData[0].id;
-                const resultRows = prices.map(p => ({
-                    search_id: searchId,
-                    store_name: p.store_name,
-                    price: p.price,
-                    currency: p.currency,
-                    product_name: p.product_name,
-                    unit: p.unit,
-                    product_url: p.product_url || null,
-                    created_at: new Date().toISOString()
-                }));
+                const resultRows = prices.map(p => {
+                    // FALLBACK: Force Google Site Search URL if AI fails or returns a blocked retailer link
+                    let finalUrl = p.product_url;
+
+                    // Map store names to domains for reliable site search
+                    const domainMap = {
+                        'Leclerc': 'e.leclerc',
+                        'E.Leclerc': 'e.leclerc',
+                        'Carrefour': 'carrefour.fr',
+                        'Intermarché': 'intermarche.com',
+                        'Intermarche': 'intermarche.com',
+                        'Auchan': 'auchan.fr',
+                        'Lidl': 'lidl.fr',
+                        'Aldi': 'aldi.fr'
+                    };
+
+                    // Find matching domain
+                    const storeKey = Object.keys(domainMap).find(k => p.store_name && p.store_name.includes(k));
+                    const domain = storeKey ? domainMap[storeKey] : null;
+
+                    // If we have a domain and the URL is not already a google search, rewrite it
+                    // Or if product_url is missing, generate it.
+                    if (domain && (!finalUrl || !finalUrl.includes('google.com'))) {
+                        const safeQuery = encodeURIComponent(`site:${domain} ${p.product_name}`);
+                        finalUrl = `https://www.google.com/search?q=${safeQuery}`;
+                    } else if (!finalUrl || !finalUrl.includes('google.com')) {
+                        // Fallback for unknown stores
+                        const safeQuery = encodeURIComponent(`${p.store_name} ${p.product_name}`);
+                        finalUrl = `https://www.google.com/search?q=${safeQuery}`;
+                    }
+
+                    return {
+                        search_id: searchId,
+                        store_name: p.store_name,
+                        price: p.price,
+                        currency: p.currency,
+                        product_name: p.product_name,
+                        unit: p.unit,
+                        product_url: finalUrl,
+                        created_at: new Date().toISOString()
+                    };
+                });
                 await supabase.from('price_results').insert(resultRows);
+
+                // Return the processed results to the frontend, not the raw AI ones
+                return new Response(JSON.stringify({ results: resultRows }), {
+                    status: 200,
+                    headers
+                });
             }
         }
 
