@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Price Comparator | Trouvez le meilleur prix</title>
+    <title>Food Scan | Trouvez le meilleur prix</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Favicon (Optional) -->
 </head>
+
 <body>
     <div class="background-globes">
         <div class="globe globe-1"></div>
@@ -19,19 +21,25 @@
     <main class="container">
         <header>
             <div class="logo">
-                <span class="logo-icon">✨</span>
-                <h1>Prix<span class="gradient-text">IA</span></h1>
+                <span class="logo-icon">🥗</span>
+                <h1>Food <span class="gradient-text">Scan</span></h1>
             </div>
-            <p class="subtitle">L'intelligence artificielle compare pour vous les prix des supermarchés en temps réel.</p>
+            <p class="subtitle">L'intelligence artificielle compare pour vous les prix des supermarchés en temps réel.
+            </p>
         </header>
 
         <section class="search-section">
             <form id="search-form">
                 <div class="input-wrapper">
-                    <input type="text" id="product-input" placeholder="Ex: Salade, Lait, Pâtes..." required autocomplete="off">
+                    <input type="text" id="product-input" placeholder="Ex: Salade, Lait, Pâtes..." required
+                        autocomplete="off">
                     <button type="submit" id="search-btn">
                         <span>Rechercher</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
                     </button>
                 </div>
             </form>
@@ -55,7 +63,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="results-grid" id="results-grid">
                 <!-- Cards will be injected here -->
             </div>
@@ -71,9 +79,11 @@
     </main>
 
     <footer>
-        <p>Propulsé par <a href="https://deepmind.google/technologies/gemini/" target="_blank">Gemini</a> & <a href="https://supabase.com" target="_blank">Supabase</a></p>
+        <p>Propulsé par <a href="https://deepmind.google/technologies/gemini/" target="_blank">Gemini</a> & <a
+                href="https://supabase.com" target="_blank">Supabase</a></p>
     </footer>
 
     <script src="app.js" type="module"></script>
 </body>
+
 </html>

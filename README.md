@@ -1,4 +1,4 @@
-# AI Food Price Comparator
+# Food Scan
 
 ## Overview
 This project allows users to search for food items and get real-time price estimates from major French supermarkets using Gemini AI. Results are stored in a Supabase database.

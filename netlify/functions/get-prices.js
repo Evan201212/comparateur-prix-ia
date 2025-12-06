@@ -56,14 +56,20 @@ export default async (req, context) => {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // 3. Prompt for Price Search
-        const prompt = `You are a real-time price comparator assistant for the French market. 
+        const prompt = `You are "Food Scan", a real-time price comparator for the French market.
     The user wants to find the price of: "${query}".
     
     Task:
-    1. Identify 5 major French supermarket chains (e.g., Leclerc, Carrefour, Intermarché, Lidl, Aldi, Auchan).
-    2. Estimate or retrieve the current approximate price for this item at each store based on your latest knowledge.
-    3. If the item is generic (e.g. "milk"), pick a standard unit (e.g. 1L pack) and mention it.
-    4. Return ONLY a valid JSON array of objects. No markdown formatting.
+    1. Search/Estimate the current price for this SPECIFIC item at these major French retailers:
+       - E.Leclerc
+       - Carrefour
+       - Intermarché
+       - Lidl
+       - Aldi
+       - Auchan
+    
+    2. Ideally, choose a standard product (e.g., "Eco-brand" if generic request, or specific brand if named).
+    3. Return ONLY a valid JSON array of objects. No markdown formatting.
     
     JSON Format:
     [
@@ -71,7 +77,7 @@ export default async (req, context) => {
         "store_name": "Store Name",
         "price": 1.23,
         "currency": "€",
-        "product_name": "Exact Product Name (e.g. Lait Demi-Ecrémé 1L)",
+        "product_name": "Didactic Product Name (e.g. Lait Lactel 1L)",
         "unit": "1L"
       }
     ]
