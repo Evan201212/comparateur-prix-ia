@@ -52,7 +52,8 @@ async function handleSearch(e) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || errorData.details || 'Erreur inconnue');
+            // Netlify or Function errors might use different fields
+            throw new Error(errorData.error || errorData.details || errorData.message || errorData.errorMessage || 'Erreur inconnue');
         }
 
         const data = await response.json();
