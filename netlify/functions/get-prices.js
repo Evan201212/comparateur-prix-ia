@@ -74,14 +74,20 @@ export default async (req, context) => {
     3. For each store, find the CHEAPEST matching specific product available.
     
     4. Return ONLY a valid JSON array. No markdown.
-    5. Generate a valid SEARCH URL for each (as previously defined). 
-       Instead, generate a SEARCH URL for the product on the retailer's website. Use these patterns:
-       - Leclerc: https://www.e.leclerc/recherche?q={product_name}
-       - Carrefour: https://www.carrefour.fr/s?q={product_name}
-       - Intermarché: https://www.intermarche.com/recherche/{product_name}
-       - Auchan: https://www.auchan.fr/recherche?text={product_name}
-       - Lidl: https://www.lidl.fr/s/?q={product_name}
-       - Aldi: https://www.aldi.fr/recherche.html?q={product_name}
+    5. Generate a valid URL. 
+       Since you cannot browse to get the exact ID, use a specific GOOGLE SITE SEARCH link. 
+       This is the most reliable way to lead the user to the product page.
+       Pattern: https://www.google.com/search?q=site:{domain}+{specific_product_name}
+       
+       Domains:
+       - Leclerc: www.e.leclerc
+       - Carrefour: www.carrefour.fr
+       - Intermarché: www.intermarche.com
+       - Auchan: www.auchan.fr
+       - Lidl: www.lidl.fr
+       - Aldi: www.aldi.fr
+       
+       Example: https://www.google.com/search?q=site:carrefour.fr+"Lait+Candia+Grandlait"
     
     JSON Format:
     [
