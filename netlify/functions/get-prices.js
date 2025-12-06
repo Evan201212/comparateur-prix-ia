@@ -139,7 +139,12 @@ export default async (req, context) => {
 
     } catch (error) {
         console.error("Error processing request:", error);
-        return new Response(JSON.stringify({ error: "Internal Server Error", details: error.message }), {
+    } catch (error) {
+        console.error("Error processing request:", error);
+        return new Response(JSON.stringify({
+            error: error.message || "Internal Server Error",
+            stack: error.stack // Optional: helpful for debugging, maybe remove for strict prod security but needed now
+        }), {
             status: 500,
             headers
         });
