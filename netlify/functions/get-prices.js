@@ -1,0 +1,143 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createClient } from "@supabase/supabase-js";
+
+export default async (req, context) => {
+    // CORS headers
+    const headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+    };
+
+    if (req.method === "OPTIONS") {
+        return { statusCode: 200, headers, body: "OK" };
+    }
+
+    if (req.method !== "POST") {
+        return {
+            statusCode: 405,
+            headers,
+            body: JSON.stringify({ error: "Method Not Allowed" }),
+        };
+    }
+
+    try {
+        const { query } = await req.json();
+
+        if (!query) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ error: "Query is required" }),
+            };
+        }
+
+        // 1. Initialize Supabase (for logging history)
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+
+        let supabase = null;
+        if (supabaseUrl && supabaseKey) {
+            supabase = createClient(supabaseUrl, supabaseKey);
+        }
+
+        // 2. Initialize Gemini
+        const geminiApiKey = process.env.GEMINI_API_KEY;
+        if (!geminiApiKey) {
+            console.error("Missing GEMINI_API_KEY");
+            return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({ error: "Server configuration error (API Key)" }),
+            };
+        }
+
+        const genAI = new GoogleGenerativeAI(geminiApiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // 3. Prompt for Price Search
+        const prompt = `You are a real-time price comparator assistant for the French market. 
+    The user wants to find the price of: "${query}".
+    
+    Task:
+    1. Identify 5 major French supermarket chains (e.g., Leclerc, Carrefour, Intermarché, Lidl, Aldi, Auchan).
+    2. Estimate or retrieve the current approximate price for this item at each store based on your latest knowledge.
+    3. If the item is generic (e.g. "milk"), pick a standard unit (e.g. 1L pack) and mention it.
+    4. Return ONLY a valid JSON array of objects. No markdown formatting.
+    
+    JSON Format:
+    [
+      {
+        "store_name": "Store Name",
+        "price": 1.23,
+        "currency": "€",
+        "product_name": "Exact Product Name (e.g. Lait Demi-Ecrémé 1L)",
+        "unit": "1L"
+      }
+    ]
+    
+    Sort the results from cheapest to most expensive.`;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+
+        // Clean up markdown code blocks if present
+        const cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        let prices = [];
+        try {
+            prices = JSON.parse(cleanJson);
+        } catch (e) {
+            console.error("Failed to parse Gemini response", responseText);
+            return {
+                statusCode: 502,
+                headers,
+                body: JSON.stringify({ error: "Failed to process AI response" })
+            };
+        }
+
+        // 4. Log to Supabase
+        if (supabase) {
+            const { data: historyData, error: historyError } = await supabase
+                .from('search_history')
+                .insert([{ query: query, created_at: new Date().toISOString() }])
+                .select();
+
+            if (historyError) {
+                console.error("Supabase history log error:", historyError);
+            } else if (historyData && historyData.length > 0) {
+                const searchId = historyData[0].id; // Use implicit id
+
+                const resultRows = prices.map(p => ({
+                    search_id: searchId,
+                    store_name: p.store_name,
+                    price: p.price,
+                    currency: p.currency,
+                    product_name: p.product_name,
+                    unit: p.unit,
+                    created_at: new Date().toISOString()
+                }));
+
+                const { error: pricesError } = await supabase
+                    .from('price_results')
+                    .insert(resultRows);
+
+                if (pricesError) console.error("Supabase prices log error:", pricesError);
+            }
+        }
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ results: prices }),
+        };
+
+    } catch (error) {
+        console.error("Error processing request:", error);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: "Internal Server Error" }),
+        };
+    }
+};
