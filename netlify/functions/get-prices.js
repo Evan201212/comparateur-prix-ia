@@ -53,24 +53,17 @@ export default async (req, context) => {
 
         const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-        // Re-enable Google Search Grounding to truly find real prices.
-        // If this fails, the environment might not support it, but it's required for "Real" info.
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            tools: [{ googleSearch: {} }]
-        });
+        // Stabilizing: Use standard model to avoid server timeouts/crashes with Search tool.
+        // We will rely on the model's vast internal database of products.
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         // 3. Prompt
-        const prompt = `You are "Food Scan", a real-time price comparator using Google Search.
+        const prompt = `You are "Food Scan", an expert price comparator for French supermarkets.
     
     User Query: "${query}"
     
-    MANDATORY INSTRUCTION:
-    You MUST use the "Google Search" tool to find the ACTUAL CURRENT PRICE of this product in France today.
-    DO NOT HALLUCINATE OR ESTIMATE. If you cannot find a price, return 0.
-    
     Task:
-    1. Search specific current prices for a matching product (Brand/Name/Weight) at:
+    1. For EACH of the following stores, identify the TOP 3 to 5 matching products available (from cheapest to mid-range):
        - E.Leclerc
        - Carrefour
        - Intermarché
@@ -78,42 +71,26 @@ export default async (req, context) => {
        - Aldi
        - Auchan
     
-    2. Select the CHEAPEST specific product found for each store.
+    2. REALISM IS KEY:
+       - Do NOT invent generic names. Use specific brands and weights (e.g., "Lait Lactel Demi-écrémé 1L").
+       - Provide a realistic estimated price for France (2024-2025).
     
-    2. CRITICAL: Do NOT estimate generic prices. Find a REAL product (Brand + Name + Weight).
-       Example: Instead of "Lait 1L", find "Lait Demi-écrémé Candia Grandlait 1L".
-    
-    3. For each store, find the CHEAPEST matching specific product available.
-    
-    4. Return ONLY a valid JSON array. No markdown.
-    5. Generate a valid URL. 
-       Since you cannot browse to get the exact ID, use a specific GOOGLE SITE SEARCH link. 
-       This is the most reliable way to lead the user to the product page.
-       Pattern: https://www.google.com/search?q=site:{domain}+{specific_product_name}
-       
-       Domains:
-       - Leclerc: www.e.leclerc
-       - Carrefour: www.carrefour.fr
-       - Intermarché: www.intermarche.com
-       - Auchan: www.auchan.fr
-       - Lidl: www.lidl.fr
-       - Aldi: www.aldi.fr
-       
-       Example: https://www.google.com/search?q=site:carrefour.fr+"Lait+Candia+Grandlait"
-    
-    JSON Format:
+    3. JSON Format:
+    Return a single JSON array containing all items found across all stores.
     [
       {
         "store_name": "Store Name",
         "price": 1.23,
         "currency": "€",
-        "product_name": "Didactic Product Name (e.g. Lait Lactel 1L)",
-        "unit": "1L",
-        "product_url": "https://www.store.com/product/..."
+        "product_name": "Specific Product Brand & Name",
+        "unit": "1kg",
+        "product_url": "" 
       }
     ]
     
-    Sort the results from cheapest to most expensive.`;
+    4. Sort the final list globally from cheapest to most expensive.
+    
+    5. CRITICAL: Return a high volume of results (at least 15-20 items total).`;
 
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
