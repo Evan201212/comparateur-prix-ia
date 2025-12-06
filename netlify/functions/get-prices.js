@@ -10,30 +10,27 @@ export default async (req, context) => {
     };
 
     if (req.method === "OPTIONS") {
-        return { statusCode: 200, headers, body: "OK" };
+        return new Response("OK", { status: 200, headers });
     }
 
     if (req.method !== "POST") {
-        return {
-            statusCode: 405,
-            headers,
-            body: JSON.stringify({ error: "Method Not Allowed" }),
-        };
+        return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+            status: 405,
+            headers
+        });
     }
 
     try {
         const { query } = await req.json();
 
         if (!query) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ error: "Query is required" }),
-            };
+            return new Response(JSON.stringify({ error: "Query is required" }), {
+                status: 400,
+                headers
+            });
         }
 
         // 1. Initialize Supabase
-        // Fallback to hardcoded demo keys if env vars are missing
         const supabaseUrl = process.env.SUPABASE_URL || "https://qagvllahsubeymnrjoqu.supabase.co";
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3ZsbGFoc3ViZXltbnJqb3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MDA1MTcsImV4cCI6MjA4MDQ3NjUxN30.7eN3dcVViEtTexfJU6RfXrFaxfS9q0BViT6rd9X7NjY";
 
@@ -43,23 +40,20 @@ export default async (req, context) => {
         }
 
         // 2. Initialize Gemini
-        // WARNING: Hardcoding API key for demo purposes as requested. 
-        // This key will be visible in the public repository.
         const geminiApiKey = process.env.GEMINI_API_KEY || "AIzaSyD4MTxBGHxHxae3T9ydUhClP1XY5nUEtIg";
+        // WARNING: Hardcoded key for demo/fix.
+
         if (!geminiApiKey) {
-            console.error("Missing GEMINI_API_KEY");
-            return {
-                statusCode: 500,
-                headers,
-                body: JSON.stringify({ error: "Server configuration error (API Key)" }),
-            };
+            return new Response(JSON.stringify({ error: "Server configuration error (API Key)" }), {
+                status: 500,
+                headers
+            });
         }
 
         const genAI = new GoogleGenerativeAI(geminiApiKey);
-        // User requested Gemini 2.5 Flash.
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        // 3. Prompt for Price Search
+        // 3. Prompt
         const prompt = `You are "Food Scan", a real-time price comparator for the French market.
     The user wants to find the price of: "${query}".
     
@@ -89,17 +83,14 @@ export default async (req, context) => {
     Sort the results from cheapest to most expensive.`;
 
         const result = await model.generateContent(prompt);
-        // Clean up markdown code blocks if present
         const responseText = result.response.text();
-        console.log("Raw Gemini Response:", responseText); // Debug log
+        console.log("Raw Gemini Response:", responseText);
 
         let cleanJson = responseText;
-        // Attempt to extract JSON array using regex
         const jsonMatch = responseText.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
             cleanJson = jsonMatch[0];
         } else {
-            // Fallback cleanup
             cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
         }
 
@@ -108,29 +99,26 @@ export default async (req, context) => {
             prices = JSON.parse(cleanJson);
         } catch (e) {
             console.error("Failed to parse Gemini response", cleanJson);
-            return {
-                statusCode: 502,
-                headers,
-                body: JSON.stringify({
-                    error: "Erreur d'analyse IA",
-                    details: "L'IA n'a pas renvoyé un format valide.",
-                    raw: responseText.substring(0, 100)
-                })
-            };
+            return new Response(JSON.stringify({
+                error: "Erreur d'analyse IA",
+                details: "L'IA n'a pas renvoyé un format valide.",
+                raw: responseText.substring(0, 100)
+            }), {
+                status: 502,
+                headers
+            });
         };
 
-        // 4. Log to Supabase
+        // 4. Log to Supabase (Async - fire and forget effectively for speed, or await it)
+        // We await it here to ensure safety
         if (supabase) {
             const { data: historyData, error: historyError } = await supabase
                 .from('search_history')
                 .insert([{ query: query, created_at: new Date().toISOString() }])
                 .select();
 
-            if (historyError) {
-                console.error("Supabase history log error:", historyError);
-            } else if (historyData && historyData.length > 0) {
-                const searchId = historyData[0].id; // Use implicit id
-
+            if (!historyError && historyData && historyData.length > 0) {
+                const searchId = historyData[0].id;
                 const resultRows = prices.map(p => ({
                     search_id: searchId,
                     store_name: p.store_name,
@@ -140,27 +128,20 @@ export default async (req, context) => {
                     unit: p.unit,
                     created_at: new Date().toISOString()
                 }));
-
-                const { error: pricesError } = await supabase
-                    .from('price_results')
-                    .insert(resultRows);
-
-                if (pricesError) console.error("Supabase prices log error:", pricesError);
+                await supabase.from('price_results').insert(resultRows);
             }
         }
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ results: prices }),
-        };
+        return new Response(JSON.stringify({ results: prices }), {
+            status: 200,
+            headers
+        });
 
     } catch (error) {
         console.error("Error processing request:", error);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: "Internal Server Error" }),
-        };
+        return new Response(JSON.stringify({ error: "Internal Server Error", details: error.message }), {
+            status: 500,
+            headers
+        });
     }
 };
