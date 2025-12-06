@@ -52,14 +52,18 @@ export default async (req, context) => {
         }
 
         const genAI = new GoogleGenerativeAI(geminiApiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        // Enable Google Search Grounding to find real-time prices and products
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            tools: [{ googleSearch: {} }]
+        });
 
         // 3. Prompt
         const prompt = `You are "Food Scan", a real-time price comparator for the French market.
     The user wants to find the price of: "${query}".
     
     Task:
-    1. Search/Estimate the current price for this SPECIFIC item at these major French retailers:
+    1. Search for the SPECIFIC REAL PRODUCT that matches the user's request in these supermarkets:
        - E.Leclerc
        - Carrefour
        - Intermarché
@@ -67,7 +71,13 @@ export default async (req, context) => {
        - Aldi
        - Auchan
     
-    4. CRITICAL: Do NOT invent specific product URLs (like /p/12345) as they often return 404. 
+    2. CRITICAL: Do NOT estimate generic prices. Find a REAL product (Brand + Name + Weight).
+       Example: Instead of "Lait 1L", find "Lait Demi-écrémé Candia Grandlait 1L".
+    
+    3. For each store, find the CHEAPEST matching specific product available.
+    
+    4. Return ONLY a valid JSON array. No markdown.
+    5. Generate a valid SEARCH URL for each (as previously defined).URLs (like /p/12345) as they often return 404. 
        Instead, generate a SEARCH URL for the product on the retailer's website. Use these patterns:
        - Leclerc: https://www.e.leclerc/recherche?q={product_name}
        - Carrefour: https://www.carrefour.fr/s?q={product_name}
