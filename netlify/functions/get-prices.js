@@ -42,7 +42,9 @@ export default async (req, context) => {
         }
 
         // 2. Initialize Gemini
-        const geminiApiKey = process.env.GEMINI_API_KEY;
+        // WARNING: Hardcoding API key for demo purposes as requested. 
+        // This key will be visible in the public repository.
+        const geminiApiKey = process.env.GEMINI_API_KEY || "AIzaSyD4MTxBGHxHxae3T9ydUhClP1XY5nUEtIg";
         if (!geminiApiKey) {
             console.error("Missing GEMINI_API_KEY");
             return {
