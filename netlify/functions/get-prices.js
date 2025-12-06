@@ -67,9 +67,14 @@ export default async (req, context) => {
        - Aldi
        - Auchan
     
-    2. Ideally, choose a standard product (e.g., "Eco-brand" if generic request, or specific brand if named).
-    3. Return ONLY a valid JSON array of objects. No markdown formatting.
-    4. For each product, try to generate a valid specific product URL or a search URL on the retailer's site.
+    4. CRITICAL: Do NOT invent specific product URLs (like /p/12345) as they often return 404. 
+       Instead, generate a SEARCH URL for the product on the retailer's website. Use these patterns:
+       - Leclerc: https://www.e.leclerc/recherche?q={product_name}
+       - Carrefour: https://www.carrefour.fr/s?q={product_name}
+       - Intermarché: https://www.intermarche.com/recherche/{product_name}
+       - Auchan: https://www.auchan.fr/recherche?text={product_name}
+       - Lidl: https://www.lidl.fr/s/?q={product_name}
+       - Aldi: https://www.aldi.fr/recherche.html?q={product_name}
     
     JSON Format:
     [
