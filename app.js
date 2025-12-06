@@ -61,6 +61,20 @@ async function handleSearch(e) {
         if (data.results) {
             currentResults = data.results;
             renderResults(currentResults);
+
+            // AUTO-ADD Logic: Find the absolute cheapest item and add it to the relevant cart
+            if (currentResults.length > 0) {
+                // Sort by price to find cheapest
+                const sortedByPrice = [...currentResults].sort((a, b) => a.price - b.price);
+                const bestDeal = sortedByPrice[0];
+
+                // Add to cart automatically
+                addToCart(bestDeal, true);
+
+                // Optional: Notify user visually (simple toast or console for now)
+                // We could add a visual highlight in the results too
+            }
+
             loadHistory(); // Refresh history
         } else {
             throw new Error('No results found');
@@ -152,6 +166,119 @@ async function loadHistory() {
         historyContainer.appendChild(tag);
     });
 }
+
+// Cart State
+let carts = {
+    'Intermarché': [],
+    'Lidl': [],
+    'Auchan': [],
+    'Aldi': [],
+    'Carrefour': [],
+    'E.Leclerc': []
+};
+
+// Colors for console logs
+const STORE_COLORS = {
+    'Intermarché': '#e11b22',
+    'Lidl': '#0050aa',
+    'Auchan': '#eec4c4',
+    'Aldi': '#002e7b',
+    'Carrefour': '#0055aa',
+    'E.Leclerc': '#0066cc'
+};
+
+// Load Carts from storage
+function loadCarts() {
+    const saved = localStorage.getItem('foodScanCarts');
+    if (saved) {
+        carts = JSON.parse(saved);
+        renderCarts();
+    }
+}
+
+// Save Carts
+function saveCarts() {
+    localStorage.setItem('foodScanCarts', JSON.stringify(carts));
+    renderCarts();
+}
+
+// Add Item to Cart
+function addToCart(item, isAuto = false) {
+    // Normalize store name to match keys
+    let storeKey = Object.keys(carts).find(key => item.store_name.toLowerCase().includes(key.toLowerCase()));
+
+    // Fallback for slight mismatches
+    if (!storeKey) {
+        if (item.store_name.includes('Leclerc')) storeKey = 'E.Leclerc';
+        else if (item.store_name.includes('Intermar')) storeKey = 'Intermarché';
+    }
+
+    if (storeKey && carts[storeKey]) {
+        // Prevent exact duplicates
+        const exists = carts[storeKey].some(i => i.product_name === item.product_name && i.price === item.price);
+        if (!exists) {
+            carts[storeKey].push(item);
+            saveCarts();
+            if (isAuto) {
+                console.log(`Auto-added best deal to ${storeKey}: ${item.product_name}`);
+            }
+        }
+    }
+}
+
+// Remove Item
+window.removeFromCart = function (storeKey, index) {
+    if (carts[storeKey]) {
+        carts[storeKey].splice(index, 1);
+        saveCarts();
+    }
+}
+
+// Clear All
+document.getElementById('clear-all-carts')?.addEventListener('click', () => {
+    if (confirm('Vider tous les paniers ?')) {
+        Object.keys(carts).forEach(k => carts[k] = []);
+        saveCarts();
+    }
+});
+
+// Render Carts UI
+function renderCarts() {
+    Object.keys(carts).forEach(storeKey => {
+        const container = document.querySelector(`.store-cart[data-store="${storeKey.replace('E.', '')}"]`);
+        // Handle special naming difference if any, e.g. E.Leclerc vs Leclerc in HTML
+        // Actually my HTML used 'Leclerc' for data-store, but logic might use 'E.Leclerc'
+        const normalizedKey = storeKey === 'E.Leclerc' ? 'Leclerc' : storeKey;
+        const selector = `.store-cart[data-store="${normalizedKey}"]`;
+        const storeDiv = document.querySelector(selector);
+
+        if (storeDiv) {
+            const list = storeDiv.querySelector('.cart-items');
+            const totalSpan = storeDiv.querySelector('.cart-total');
+
+            list.innerHTML = '';
+
+            let total = 0;
+            carts[storeKey].forEach((item, index) => {
+                total += item.price;
+                const li = document.createElement('li');
+                li.className = 'cart-item';
+                li.innerHTML = `
+                    <span class="cart-item-name" title="${item.product_name}">${item.product_name}</span>
+                    <span class="cart-item-price">${item.price.toFixed(2)}€</span>
+                    <button class="delete-item-btn" onclick="removeFromCart('${storeKey}', ${index})">×</button>
+                `;
+                list.appendChild(li);
+            });
+
+            totalSpan.textContent = total.toFixed(2) + '€';
+        }
+    });
+}
+
+// Initialize Carts
+document.addEventListener('DOMContentLoaded', loadCarts);
+
 
 // Utility
 function escapeHtml(text) {
