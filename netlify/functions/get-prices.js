@@ -52,21 +52,33 @@ export default async (req, context) => {
         }
 
         const genAI = new GoogleGenerativeAI(geminiApiKey);
-        // Reverting Google Search tool as it causes 500 errors (likely needs different setup/version)
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        // Re-enable Google Search Grounding to truly find real prices.
+        // If this fails, the environment might not support it, but it's required for "Real" info.
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            tools: [{ googleSearch: {} }]
+        });
 
         // 3. Prompt
-        const prompt = `You are "Food Scan", a real-time price comparator for the French market.
-    The user wants to find the price of: "${query}".
+        const prompt = `You are "Food Scan", a real-time price comparator using Google Search.
+    
+    User Query: "${query}"
+    
+    MANDATORY INSTRUCTION:
+    You MUST use the "Google Search" tool to find the ACTUAL CURRENT PRICE of this product in France today.
+    DO NOT HALLUCINATE OR ESTIMATE. If you cannot find a price, return 0.
     
     Task:
-    1. Search for the SPECIFIC REAL PRODUCT that matches the user's request in these supermarkets:
+    1. Search specific current prices for a matching product (Brand/Name/Weight) at:
        - E.Leclerc
        - Carrefour
        - Intermarché
        - Lidl
        - Aldi
        - Auchan
+    
+    2. Select the CHEAPEST specific product found for each store.
     
     2. CRITICAL: Do NOT estimate generic prices. Find a REAL product (Brand + Name + Weight).
        Example: Instead of "Lait 1L", find "Lait Demi-écrémé Candia Grandlait 1L".
