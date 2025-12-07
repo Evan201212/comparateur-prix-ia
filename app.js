@@ -43,8 +43,8 @@ async function handleSearch(e) {
     queryDisplay.textContent = query;
 
     try {
-        // Call Netlify Function
-        const response = await fetch('/.netlify/functions/get-prices', {
+        // Call Vercel API Function
+        const response = await fetch('/api/get-prices', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query })
