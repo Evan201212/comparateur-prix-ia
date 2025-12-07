@@ -1,19 +1,8 @@
 {
-    "version": 2,
-    "builds": [
+    "rewrites": [
         {
-            "src": "api/get-prices.js",
-            "use": "@vercel/node"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/api/get-prices",
-            "dest": "/api/get-prices.js"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/index.html"
+            "source": "/api/:path*",
+            "destination": "/api/:path*"
         }
     ]
 }
