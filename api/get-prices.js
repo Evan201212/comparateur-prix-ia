@@ -130,30 +130,23 @@ export default async function handler(req, res) {
                     const encodedName = encodeURIComponent(cleanProductName);
 
                     if (!finalUrl || !finalUrl.includes('http')) {
+                        // UNIVERSAL DIRECT LINK STRATEGY
+                        // We now have direct search patterns for all major stores.
                         if (p.store_name.toLowerCase().includes('carrefour')) {
                             finalUrl = `https://www.carrefour.fr/s?q=${encodedName}`;
                         } else if (p.store_name.toLowerCase().includes('leclerc')) {
-                            finalUrl = `https://www.e.leclerc/recherche?q=${encodedName}`;
+                             finalUrl = `https://www.e.leclerc/recherche?q=${encodedName}`;
                         } else if (p.store_name.toLowerCase().includes('aldi')) {
                             finalUrl = `https://www.aldi.fr/recherche.html?query=${encodedName}`;
+                        } else if (p.store_name.toLowerCase().includes('lidl')) {
+                            finalUrl = `https://www.lidl.fr/q/search?q=${encodedName}`;
+                        } else if (p.store_name.toLowerCase().includes('auchan')) {
+                            finalUrl = `https://www.auchan.fr/recherche?text=${encodedName}`;
+                        } else if (p.store_name.toLowerCase().includes('intermarch')) {
+                            finalUrl = `https://www.intermarche.com/recherche/produits?terms=${encodedName}`;
                         } else {
-                            // Fallback to Google Site Search for Auchan, Intermarché, Lidl (complex/blocked search URLs)
-                            const domainMap = {
-                                'Intermarché': 'intermarche.com',
-                                'Intermarche': 'intermarche.com',
-                                'Auchan': 'auchan.fr',
-                                'Lidl': 'lidl.fr'
-                            };
-
-                            const storeKey = Object.keys(domainMap).find(k => p.store_name && p.store_name.includes(k));
-                            const domain = storeKey ? domainMap[storeKey] : null;
-
-                            if (domain) {
-                                finalUrl = `https://www.google.com/search?q=${encodeURIComponent(`site:${domain} ${cleanProductName}`)}`;
-                            } else {
-                                // Ultimate fallback
-                                finalUrl = `https://www.google.com/search?q=${encodeURIComponent(`${p.store_name} ${cleanProductName}`)}`;
-                            }
+                            // Ultimate fallback for any unknown store
+                            finalUrl = `https://www.google.com/search?q=${encodeURIComponent(`${p.store_name} ${cleanProductName}`)}`;
                         }
                     }
 
