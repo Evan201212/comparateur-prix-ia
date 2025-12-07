@@ -35,12 +35,12 @@ export default async function handler(req, res) {
         }
 
         // 2. Initialize Gemini
-        // PRIORITY: Use hardcoded key for demo to avoid Env var issues on new Vercel deploy.
-        const geminiApiKey = "AIzaSyD4MTxBGHxHxae3T9ydUhClP1XY5nUEtIg" || process.env.GEMINI_API_KEY;
+        // SECURITY UPDATE: The previous demo key was revoked. We must use the Environment Variable.
+        const geminiApiKey = process.env.GEMINI_API_KEY;
 
         if (!geminiApiKey) {
             console.error("Missing Gemini API Key");
-            res.status(500).json({ error: "Server configuration error (API Key)" });
+            res.status(500).json({ error: "Server configuration error (Missing GEMINI_API_KEY Env Var)" });
             return;
         }
 
