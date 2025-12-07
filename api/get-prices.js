@@ -124,33 +124,37 @@ export default async function handler(req, res) {
                     let finalUrl = p.product_url;
 
                     // Map store names to domains for reliable site search
-                    const domainMap = {
-                        'Leclerc': 'e.leclerc',
-                        'E.Leclerc': 'e.leclerc',
-                        'Carrefour': 'carrefour.fr',
-                        'Intermarché': 'intermarche.com',
-                        'Intermarche': 'intermarche.com',
-                        'Auchan': 'auchan.fr',
-                        'Lidl': 'lidl.fr',
-                        'Aldi': 'aldi.fr'
-                    };
-
-                    // Find matching domain
-                    const storeKey = Object.keys(domainMap).find(k => p.store_name && p.store_name.includes(k));
-                    const domain = storeKey ? domainMap[storeKey] : null;
-
-                    // If we have a domain and the URL is not already a google search, rewrite it
-                    // Or if product_url is missing, generate it.
-                    // IMPORTANT: Sanitize product name by removing quotes to avoid strict search failures on Google
+                    // HYBRID STRATEGY: Use Direct Search URLs for known structures ("Proof"), Google for others.
+                    // IMPORTANT: Sanitize product name by removing quotes to avoid strict search failures
                     const cleanProductName = p.product_name.replace(/['"]/g, '');
+                    const encodedName = encodeURIComponent(cleanProductName);
 
-                    if (domain && (!finalUrl || !finalUrl.includes('google.com'))) {
-                        const safeQuery = encodeURIComponent(`site:${domain} ${cleanProductName}`);
-                        finalUrl = `https://www.google.com/search?q=${safeQuery}`;
-                    } else if (!finalUrl || !finalUrl.includes('google.com')) {
-                        // Fallback for unknown stores
-                        const safeQuery = encodeURIComponent(`${p.store_name} ${cleanProductName}`);
-                        finalUrl = `https://www.google.com/search?q=${safeQuery}`;
+                    if (!finalUrl || !finalUrl.includes('http')) {
+                        if (p.store_name.toLowerCase().includes('carrefour')) {
+                            finalUrl = `https://www.carrefour.fr/s?q=${encodedName}`;
+                        } else if (p.store_name.toLowerCase().includes('leclerc')) {
+                            finalUrl = `https://www.e.leclerc/recherche?q=${encodedName}`;
+                        } else if (p.store_name.toLowerCase().includes('aldi')) {
+                            finalUrl = `https://www.aldi.fr/recherche.html?query=${encodedName}`;
+                        } else {
+                            // Fallback to Google Site Search for Auchan, Intermarché, Lidl (complex/blocked search URLs)
+                            const domainMap = {
+                                'Intermarché': 'intermarche.com',
+                                'Intermarche': 'intermarche.com',
+                                'Auchan': 'auchan.fr',
+                                'Lidl': 'lidl.fr'
+                            };
+
+                            const storeKey = Object.keys(domainMap).find(k => p.store_name && p.store_name.includes(k));
+                            const domain = storeKey ? domainMap[storeKey] : null;
+
+                            if (domain) {
+                                finalUrl = `https://www.google.com/search?q=${encodeURIComponent(`site:${domain} ${cleanProductName}`)}`;
+                            } else {
+                                // Ultimate fallback
+                                finalUrl = `https://www.google.com/search?q=${encodeURIComponent(`${p.store_name} ${cleanProductName}`)}`;
+                            }
+                        }
                     }
 
                     return {
