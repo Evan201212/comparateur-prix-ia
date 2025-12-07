@@ -46,17 +46,23 @@ export default async function handler(req, res) {
 
         const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-        // Stabilizing: Use standard model to avoid server timeouts/crashes with Search tool.
-        // We will rely on the model's vast internal database of products.
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        // REAL-TIME PRICING: Enable Google Search Grounding for exact prices
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            tools: [{ googleSearch: {} }]
+        });
 
-        // 3. Prompt
-        const prompt = `You are "Food Scan", an expert price comparator for French supermarkets.
+        // 3. Prompt with Real-Time Search Mandate
+        const prompt = `You are "Food Scan", a real-time price comparator for French supermarkets.
     
     User Query: "${query}"
     
+    MANDATORY INSTRUCTION:
+    You MUST use Google Search to find ACTUAL CURRENT PRICES for this product in France TODAY.
+    DO NOT estimate or guess prices. Search for real offers and promotions.
+    
     Task:
-    1. For EACH of the following stores, identify the TOP 3 to 5 matching products available (from cheapest to mid-range):
+    1. For EACH of the following stores, search for the TOP 3 to 5 matching products currently available:
        - E.Leclerc
        - Carrefour
        - Intermarché
@@ -64,9 +70,10 @@ export default async function handler(req, res) {
        - Aldi
        - Auchan
     
-    2. REALISM IS KEY:
-       - Do NOT invent generic names. Use specific brands and weights (e.g., "Lait Lactel Demi-écrémé 1L").
-       - Provide a realistic estimated price for France (2024-2025).
+    2. REAL DATA ONLY:
+       - Use Google Search to find actual product listings and prices
+       - Include specific brands, weights, and current promotional prices
+       - If you cannot find a real price for a store, skip that store
     
     3. JSON Format:
     Return a single JSON array containing all items found across all stores.
@@ -83,7 +90,7 @@ export default async function handler(req, res) {
     
     4. Sort the final list globally from cheapest to most expensive.
     
-    5. CRITICAL: Return a high volume of results (at least 15-20 items total).`;
+    5. Return as many real results as you can find (aim for 10-20 items total).`;
 
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
@@ -135,7 +142,7 @@ export default async function handler(req, res) {
                         if (p.store_name.toLowerCase().includes('carrefour')) {
                             finalUrl = `https://www.carrefour.fr/s?q=${encodedName}`;
                         } else if (p.store_name.toLowerCase().includes('leclerc')) {
-                             finalUrl = `https://www.e.leclerc/recherche?q=${encodedName}`;
+                            finalUrl = `https://www.e.leclerc/recherche?q=${encodedName}`;
                         } else if (p.store_name.toLowerCase().includes('aldi')) {
                             finalUrl = `https://www.aldi.fr/recherche.html?query=${encodedName}`;
                         } else if (p.store_name.toLowerCase().includes('lidl')) {
